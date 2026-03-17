@@ -28,7 +28,9 @@ public with sharing class SOQL {
 	 * Update the corresponding test class and testGetAllLeads method to cover this method
 	 */
 	public static List<Lead> getAllLeads () {
-	List<Lead> getLeads = [SELECT Id, LastName, Company, Phone, Email FROM Lead];
+	List<Lead> getLeads = [
+		SELECT Id, LastName, Company, Phone, Email 
+		FROM Lead];
 	return getLeads;
 	}
 	
@@ -43,7 +45,11 @@ public with sharing class SOQL {
 	//  The body of the method
 	// TR - Trying to keep it dynamic per lecture video by using a list variable for the query, rather than hardcoding a string. This allows for flexibility in updating the method and what it retrieves in future. Easier to debug too.
 	List<String> contactName = new List<String>{'John'};
-	List<Contact> getContacts = [SELECT Id, Name FROM Contact WHERE FirstName IN :contactName];
+	List<Contact> getContacts = [
+		SELECT Id, Name 
+		FROM Contact 
+		WHERE FirstName 
+		IN :contactName];
 	return getContacts;
 	}
 
@@ -80,7 +86,11 @@ public with sharing class SOQL {
 	 */
 	public static List<Opportunity> getClosedWonOpportunitiesByAccount (Id accountId) {
 		List<Opportunity> opportunities = new List<Opportunity>();
-		for (Opportunity opp : [SELECT Id, Name, StageName, CloseDAte, AccountId, Amount FROM Opportunity WHERE AccountId = :accountId AND StageName = 'Closed Won']) {
+		for (Opportunity opp : [
+			SELECT Id, Name, StageName, CloseDAte, AccountId, Amount 
+			FROM Opportunity 
+			WHERE AccountId = :accountId 
+			AND StageName = 'Closed Won']) {
 			opportunities.add(opp);
 		}
 		return opportunities;
@@ -119,7 +129,10 @@ public with sharing class SOQL {
 	public static Map <Id, Task> getTasksDueNextWeek () {
 	//gets the records due within next 7 days (7 days less or equals to activityDate).
 	//TR: Note - I can query within a map constructor. The map constructor will automatically map the Id of the task to the key, and the record to the value of the pair.
-	Map<Id, Task> TasksDue = new Map<Id, Task>([SELECT Id, ActivityDate FROM Task WHERE ActivityDate <= NEXT_N_DAYS:7]);
+	Map<Id, Task> TasksDue = new Map<Id, Task>([
+		SELECT Id, ActivityDate 
+		FROM Task 
+		WHERE ActivityDate <= NEXT_N_DAYS:7]);
 	return TasksDue;
 	}
 
@@ -133,7 +146,11 @@ public with sharing class SOQL {
 	 * TR: retrieve Contacts where emails ENDS with example.com; similar to %example.com% which checks if variable CONTAINS it.
 	 */
 	public static List <Contact> getContactByEmailDomain () {
-		List<Contact> contactEmailDomain = [SELECT Id, Name, Email FROM Contact WHERE Email LIKE '%example.com'];
+		List<Contact> contactEmailDomain = [
+			SELECT Id, Name, Email 
+			FROM Contact 
+			WHERE Email 
+			LIKE '%example.com'];
 		return contactEmailDomain;
 	}
 
@@ -146,7 +163,11 @@ public with sharing class SOQL {
 	 */
 	public static List<Opportunity> getOpportunitiesByNameKeyword(String keyword) {
 		keyword = '%' + keyword + '%';
-		List<Opportunity> opportunities = [SELECT Id, Name, StageName, AccountId FROM Opportunity WHERE Name LIKE :keyword];
+		List<Opportunity> opportunities = [
+			SELECT Id, Name, StageName, AccountId 
+			FROM Opportunity 
+			WHERE Name 
+			LIKE :keyword];
 		return opportunities;
 	}
 
@@ -156,7 +177,7 @@ public with sharing class SOQL {
 	 * @return A list of Case records.
 	 */
 	public static List<Case> getFilterCaseOrigins() {
-		List<Case> cases = new List<Case> ([SELECT Id, Origin FROM Case WHERE Origin = 'Phone']);
+		List<Case> cases =[SELECT Id, Origin FROM Case WHERE Origin = 'Phone'];
 		return cases;
 	}
 
@@ -172,7 +193,10 @@ public with sharing class SOQL {
 	 */
 	public static List<Lead> getLeadsBySourceOrTitle (String leadSource, String keyword ) {
 	keyword = '%' + keyword + '%'; 
-	List<Lead> leadsFiltered = new List<Lead> ([SELECT Id, LastName, Company, Phone, Email, LeadSource, Title FROM Lead WHERE (LeadSource LIKE :leadSource OR Title LIKE :keyword)]);
+	List<Lead> leadsFiltered = new List<Lead> ([
+		SELECT Id, LastName, Company, Phone, Email, LeadSource, Title 
+		FROM Lead 
+		WHERE (LeadSource LIKE :leadSource OR Title LIKE :keyword)]);
 	return leadsFiltered;
 	}
 
@@ -200,7 +224,10 @@ public with sharing class SOQL {
 	 * 
 	 */
 	public static Decimal getTotalRevenueByStage(String stage) {
-		AggregateResult totalRevenue = [SELECT SUM(Amount) totalAmount FROM Opportunity WHERE (StageName =:stage OR Amount >= 10000)];
+		AggregateResult totalRevenue = [
+			SELECT SUM(Amount) totalAmount 
+			FROM Opportunity 
+			WHERE (StageName =:stage OR Amount >= 10000)];
 		Decimal result = (Decimal)totalRevenue.get('totalAmount');
 		return (result);
 	}
@@ -226,13 +253,13 @@ public with sharing class SOQL {
 	 * @return A list of Opportunities with an Amount greater than 100,000, ordered by CloseDate, and limited to 5 records.
 	 */
 	public static List<Opportunity> getHighValueOpportunities() {
-			List<Opportunity> highValueOpps = new List<Opportunity>([
+			List<Opportunity> highValueOpps = [
 			SELECT Id, Name, CloseDate, Amount
 			FROM Opportunity
 			WHERE Amount > 100000
 			ORDER BY CloseDate
 			LIMIT 5
-		]);
+		];
 		return highValueOpps; 
 	}
 
@@ -320,7 +347,11 @@ public with sharing class SOQL {
 	 * TR - Would add an if/else statement to check for null in real world scenario, but for the exercise I assume it's all good.
 	 */
 	public static Account getAccountAndOpportunitiesFromAccountId(Id accountId) {
-		Account acc = [SELECT Id, Name, (SELECT Id, Name FROM Opportunities) FROM Account WHERE Id = :accountId];
+		Account acc = [
+			SELECT Id, Name, 
+			(SELECT Id, Name FROM Opportunities) 
+			FROM Account 
+			WHERE Id = :accountId];
 		return acc;
 	}
 
@@ -361,29 +392,31 @@ public with sharing class SOQL {
 	 * TR - This was tricky. Keen to know what a better way to write this is...
 	 */
 	public static List<Account> findAccountsByLeadEmailDomains(Set<Id> leadIds) {
-		// Query the Leads
-		List <Lead> leads = new List<Lead>([
-		SELECT Id, Email
-		FROM Lead
-		WHERE Id IN :leadIds
-		]);
-
+		
+        // Query the Leads
 		// Create a set of email domains from the Leads
 		// Loop through each Lead
 		// Get the email from the Lead
 		// Check if the email is not null
 		// Add the email domain to the set
-		Set<String> setEmailDomains = new Set<String>();
-		for (Lead lead : leads) {
-			if (lead.Email != null) {
-				setEmailDomains.add(lead.Email.substringAfter('@'));
-			}
-		}
 		// Query the Accounts
-		List <Account> accounts = new List<Account>();
-        for (Account acc : [SELECT Id, Website FROM Account]) {
 			//TR - Extract domain from account Website to compare with Set.
 			//TR - After the websiteDomain is extracted, check if the domain is in the set. 
+
+		List <Lead> leads = new List<Lead>([
+		SELECT Id, Email
+		FROM Lead
+		WHERE Id IN :leadIds
+		AND Email != null
+		]);
+
+		Set<String> setEmailDomains = new Set<String>();
+		for (Lead lead : leads) {
+		setEmailDomains.add(lead.Email.substringAfter('@'));
+		}
+		
+		List <Account> accounts = new List<Account>();
+        for (Account acc : [SELECT Id, Website FROM Account]) {
 			String websiteDomain = acc.Website;
 			if (websiteDomain.startsWithIgnoreCase('www.')) {
 				websiteDomain = websiteDomain.substringAfter('.');
@@ -407,15 +440,12 @@ public with sharing class SOQL {
 	 *  TR - Used sObject.clone to create a new object in memory. I don't fully understand the difference between this clone and list.clone/deepclone yet, but it looks like
 	 * - using the list clone methods does not give the expected behaviour; the cloned objects create a like for like OLI list. Deep clone will create new list/new (and cloned) objects from original.
 	 * - TR - sObject clone will create a new copy of a single record.
+	 * - TR: POST SUBMISSION / BEFORE FEEDBACK - I slept on this question after submission as I knew that looping within a loop is not necessarily efficient. I realized on review today that I could use the enhanced loop for this scenario.
 	 */
 	public static void cloneLineItems(Id origOppId, List<Id> cloneOppIds) {
-		// Query the original Opportunity Line Items
-         List<OpportunityLineItem> originalOppLineItems = [
-          SELECT Id, OpportunityId, PricebookEntryId, UnitPrice, Quantity
-          FROM OpportunityLineItem
-          WHERE OpportunityId = :origOppId
-          ]; 
+		
 
+		// Query the original Opportunity Line Items
 		// Create a list to hold the new line items
 		// Loop through each cloned Opportunity Id 
 		 // Generate a random number between 1 and 3 for quantity
@@ -423,19 +453,40 @@ public with sharing class SOQL {
 		// Clone the original line item and add the random number to the quantity
 		  // Insert the new line items
 
+		List<OpportunityLineItem> originalOppLineItems = [
+        SELECT Id, OpportunityId, PricebookEntryId, UnitPrice, Quantity
+        FROM OpportunityLineItem
+        WHERE OpportunityId = :origOppId
+        ]; 
+
+		List<OpportunityLineItem> newOppLineItems = new List<OpportunityLineItem>();
+		for (Integer i = 0; i < originalOppLineItems.size(); i++) {
+			Integer randomnum = (Integer) (Math.random() * 3) + 1;
+			OpportunityLineItem OLIcopy = originalOppLineItems.get(i).clone(false, false, false, false);
+			OLIcopy.OpportunityId = cloneOppIds.get(i);
+			OLIcopy.Quantity = randomnum;
+			newOppLineItems.add(OLIcopy);
+		}
+		if (!newOppLineItems.isEmpty()) {
+			insert newOppLineItems;
+
+		}
+
+		/* TR - NOTE; ORIGINAL BUILD; kept it for future reference.
 		List<OpportunityLineItem> newOppLineItems = new List<OpportunityLineItem>();
 		for (Id cloneOppId : cloneOppIds) {
 			for (OpportunityLineItem originalOLI : originalOppLineItems) {
-			Integer randomnum = (Integer) (Math.floor(Math.random() * 3)) + 1;
+
+			Integer randomnum = (Integer) (Math.random() * 3) + 1;
 			OpportunityLineItem OLIcopy = originalOLI.clone(false, false, false, false);
 			OLIcopy.OpportunityId = cloneOppId;
 			OLIcopy.Quantity = randomnum;
 			newOppLineItems.add(OLIcopy);
 		}
 		}
-		if (!newOppLineItems.isEmpty()) {
-			insert newOppLineItems;
-		}
+		*/
+
+	
 	}
 
 	/**
@@ -463,23 +514,35 @@ public with sharing class SOQL {
 
 	public static void setPrimaryContact() {
 
+		//BLOCK 1
 		// Create a set of Account Ids from the Opportunities
 		//Use the getOpportunityDetailsForClosedWon() method to get the Opportunities
 		 // TR - created a list to populate results from method. This is to avoid calling the method more than once (I nearly did this later down the line and thought it would be inefficient to do so)
 		// TR - loop throught each opportunity object from the list/method to collect the set of accountIds. 
 
-		Set<Id> accountIds = new Set<Id>();
-		List<Opportunity> oppsFromMethod = getOpportunityDetailsForClosedWon();
-
-		for (Opportunity oppFromMethod : oppsFromMethod) {
-			accountIds.add(oppFromMethod.AccountId);
-		}
-
+		//BLOCK 2
 		//TR - Created Map <Id, Id> as I wanted to only collect one contact out of multiple contacts related to the set of accountIds. It will also be the first alphabetically as it is ordered by ASC order.
 		// Query the Contacts 
 		// Loop through each Contact and add the Account Id and Contact to the map
 		//TR - This is a loop that goes through a list that orders contacts (related to account) by Name (A-Z). Because a key/pair value can only have one unique key, the if condition checks if the key already exists in the map. -
 		//- If it does, it already has the contact FOR the accountId in the map, and as it was collected by Name (ASC), we ensure that we are setting the value to be the contactId of the contact that is first alphabetically.
+
+		//BLOCK 3
+		// Loop through each Opportunity 
+		// TR - The loop first aims to assign the contactId var with the accountId key value in the map. It does this by getting the current opportunity item and using its accountId in the map.get() method to return the paired contactId value.
+		// TR - Then it checks if the contactId is NOT null. This ensures that the current opportunity item has an accountId in the map before it actually updates the custom contact lookup field with the already set contactId.
+		// TR - I initially used a containskey() method instead in the if statement and later used the get() method to retrieve the contact id, but, on review and some investigating and help from goodolGPT, I understood this approach was better
+		// - as it calls one less method and also achieves a simpler way to check for the right condition while setting the contactId for use immediately after the if statement.
+		
+		// Update the Opportunity primary contact from accountToContactMap
+		// Update the Opportunities
+
+
+		Set<Id> accountIds = new Set<Id>();
+		List<Opportunity> oppsFromMethod = getOpportunityDetailsForClosedWon();
+		for (Opportunity oppFromMethod : oppsFromMethod) {
+			accountIds.add(oppFromMethod.AccountId);
+		}
 
 		Map<Id,Id> accountToContactMap = new Map<Id,Id>();
 		for (Contact accountContact :[SELECT Id, AccountId FROM Contact WHERE AccountId IN :accountIds ORDER BY Name ASC]) {
@@ -488,23 +551,12 @@ public with sharing class SOQL {
 			}
 		}
 
-		// Loop through each Opportunity 
-		// TR - The loop first aims to assign the contactId var with the accountId key value in the map. It does this by getting the current opportunity item and using its accountId in the map.get() method to return the paired contactId value.
-		// TR - Then it checks if the contactId is NOT null. This ensures that the current opportunity item has an accountId in the map before it actually updates the custom contact lookup field with the already set contactId.
-		// TR - I initially used a containskey() method instead in the if statement and later used the get() method to retrieve the contact id, but, on review and some investigating and help from goodolGPT, I understood this approach was better
-		// - as it calls one less method and also achieves a simpler way to check for the right condition while setting the contactId for use immediately after the if statement.
-		
-		// Update the Opportunity primary contact from accountToContactMap
-
 		for (Opportunity opp : oppsFromMethod) {
 			Id contactId = accountToContactMap.get(opp.AccountId);
 		  if (contactId != null) {
 		      opp.Primary_Contact__c = contactId;
 		}
 		}	
-		// Update the Opportunities
 		update oppsFromMethod;
-		
 	}
-	
 }
