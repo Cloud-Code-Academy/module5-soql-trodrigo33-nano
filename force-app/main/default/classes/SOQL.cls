@@ -461,7 +461,7 @@ public with sharing class SOQL {
 
 		List<OpportunityLineItem> newOppLineItems = new List<OpportunityLineItem>();
 		for (Integer i = 0; i < originalOppLineItems.size(); i++) {
-			Integer randomnum = (Integer) (Math.random() * 3) + 1;
+			Integer randomnum = (Integer) (Math.floor(Math.random()) * 3) + 1;
 			OpportunityLineItem OLIcopy = originalOppLineItems.get(i).clone(false, false, false, false);
 			OLIcopy.OpportunityId = cloneOppIds.get(i);
 			OLIcopy.Quantity = randomnum;
@@ -540,23 +540,30 @@ public with sharing class SOQL {
 
 		Set<Id> accountIds = new Set<Id>();
 		List<Opportunity> oppsFromMethod = getOpportunityDetailsForClosedWon();
+		List<Opportunity> oppsUpdate = new List<Opportunity>();
+		
+		//loop through opps from method to populate the accountIds SET. 
 		for (Opportunity oppFromMethod : oppsFromMethod) {
 			accountIds.add(oppFromMethod.AccountId);
 		}
 
+		//create map that contains accountId and Contact Id
 		Map<Id,Id> accountToContactMap = new Map<Id,Id>();
+
+		//loop through each contact retrieved from the accountIds SET. If the current contact's accountId is not in the map, put key/pair value in.
 		for (Contact accountContact :[SELECT Id, AccountId FROM Contact WHERE AccountId IN :accountIds ORDER BY Name ASC]) {
 			if (!accountToContactMap.containsKey(accountContact.AccountId)) {
-			 accountToContactMap.put(accountContact.AccountId, accountContact.Id);
+			accountToContactMap.put(accountContact.AccountId, accountContact.Id);
 			}
 		}
-
+		//loop through each opp in the list from the method using the now populated map.
 		for (Opportunity opp : oppsFromMethod) {
 			Id contactId = accountToContactMap.get(opp.AccountId);
 		  if (contactId != null) {
-		      opp.Primary_Contact__c = contactId;
+		    opp.Primary_Contact__c = contactId;
+			oppsUpdate.add(opp);
 		}
 		}	
-		update oppsFromMethod;
-	}
+		update oppsUpdate;
+}
 }
