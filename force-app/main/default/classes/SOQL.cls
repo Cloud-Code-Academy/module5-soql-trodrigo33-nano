@@ -420,16 +420,16 @@ public with sharing class SOQL {
 		WHERE Id IN :leadIds
 		AND Email != null
 		]) {
-		setEmailDomains.add(lead.Email.substringAfter('@'));
+		setEmailDomains.add('www.' + lead.Email.substringAfter('@'));
 		}
 		
 		List <Account> accounts = new List<Account>();
-        for (Account acc : [SELECT Id, Website FROM Account WHERE Website IN :websites]) {
+        for (Account acc : [SELECT Id, Website FROM Account WHERE Website LIKE :setEmailDomains]) {
 			String websiteDomain = acc.Website;
 			if (websiteDomain.startsWithIgnoreCase('www.')) {
 				websiteDomain = websiteDomain.substringAfter('.');
 			}
-			 if (setEmailDomains.contains(websiteDomain)) {
+			 if (setEmailDomains.contains(acc.Website)) {
 				accounts.add(acc);
 			 }
 		}
