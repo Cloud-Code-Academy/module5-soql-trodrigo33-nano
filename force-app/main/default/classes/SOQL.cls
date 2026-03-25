@@ -177,7 +177,7 @@ public with sharing class SOQL {
 	 * @return A list of Case records.
 	 */
 	public static List<Case> getFilterCaseOrigins() {
-		List<Case> cases =[SELECT Id, Origin FROM Case WHERE Origin = 'Phone'];
+		List<Case> cases =[SELECT Id, Origin FROM Case WHERE Origin NOT IN('Web', 'Email', '')];
 		return cases;
 	}
 
@@ -403,20 +403,28 @@ public with sharing class SOQL {
 			//TR - Extract domain from account Website to compare with Set.
 			//TR - After the websiteDomain is extracted, check if the domain is in the set. 
 
+			//TR (26/3/26)- Removing query per feedback; to consolidate with first for loop; building domain set.
+/*
 		List <Lead> leads = new List<Lead>([
 		SELECT Id, Email
 		FROM Lead
 		WHERE Id IN :leadIds
 		AND Email != null
 		]);
+*/
 
 		Set<String> setEmailDomains = new Set<String>();
-		for (Lead lead : leads) {
+		for (Lead lead : [
+		SELECT Id, Email
+		FROM Lead
+		WHERE Id IN :leadIds
+		AND Email != null
+		]) {
 		setEmailDomains.add(lead.Email.substringAfter('@'));
 		}
 		
 		List <Account> accounts = new List<Account>();
-        for (Account acc : [SELECT Id, Website FROM Account]) {
+        for (Account acc : [SELECT Id, Website FROM Account WHERE Website IN :websites]) {
 			String websiteDomain = acc.Website;
 			if (websiteDomain.startsWithIgnoreCase('www.')) {
 				websiteDomain = websiteDomain.substringAfter('.');
@@ -452,7 +460,7 @@ public with sharing class SOQL {
 			// Loop through each original line item
 		// Clone the original line item and add the random number to the quantity
 		  // Insert the new line items
-
+		
 		List<OpportunityLineItem> originalOppLineItems = [
         SELECT Id, OpportunityId, PricebookEntryId, UnitPrice, Quantity
         FROM OpportunityLineItem
@@ -469,24 +477,7 @@ public with sharing class SOQL {
 		}
 		if (!newOppLineItems.isEmpty()) {
 			insert newOppLineItems;
-
 		}
-
-		/* TR - NOTE; ORIGINAL BUILD; kept it for future reference.
-		List<OpportunityLineItem> newOppLineItems = new List<OpportunityLineItem>();
-		for (Id cloneOppId : cloneOppIds) {
-			for (OpportunityLineItem originalOLI : originalOppLineItems) {
-
-			Integer randomnum = (Integer) (Math.random() * 3) + 1;
-			OpportunityLineItem OLIcopy = originalOLI.clone(false, false, false, false);
-			OLIcopy.OpportunityId = cloneOppId;
-			OLIcopy.Quantity = randomnum;
-			newOppLineItems.add(OLIcopy);
-		}
-		}
-		*/
-
-	
 	}
 
 	/**
