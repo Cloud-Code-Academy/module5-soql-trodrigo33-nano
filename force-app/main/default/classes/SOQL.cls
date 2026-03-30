@@ -531,7 +531,6 @@ public with sharing class SOQL {
 
 		Set<Id> accountIds = new Set<Id>();
 		List<Opportunity> oppsFromMethod = getOpportunityDetailsForClosedWon();
-		List<Opportunity> oppsUpdate = new List<Opportunity>();
 		
 		//loop through opps from method to populate the accountIds SET. 
 		for (Opportunity oppFromMethod : oppsFromMethod) {
@@ -552,9 +551,8 @@ public with sharing class SOQL {
 			Id contactId = accountToContactMap.get(opp.AccountId);
 		  if (contactId != null) {
 		    opp.Primary_Contact__c = contactId;
-			oppsUpdate.add(opp);
 		}
 		}	
-		update oppsUpdate;
+		update oppsFromMethod;
 }
 }
