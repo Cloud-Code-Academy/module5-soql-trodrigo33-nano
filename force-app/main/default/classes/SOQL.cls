@@ -67,10 +67,11 @@ public with sharing class SOQL {
 	 List<String> lastNames = new List<String>{'Smith', 'Jones'};
 	 List<Id> contactIds = new List<Id>();
      
+	 // figure out where is best to add null guard
 	 for (Contact cont : [SELECT Id FROM Contact WHERE LastName IN :lastNames]) {
 		contactIds.add(cont.Id)	;
 	 }
-	 return contactIds;
+		 return contactIds;
 	}
 
 	/**
@@ -113,6 +114,12 @@ public with sharing class SOQL {
 	public static Integer totalCountofAccounts () {
 	Integer countAccounts = [SELECT COUNT() FROM Account];
 	return countAccounts;
+
+	/*
+	AggregateResult[] theAccounts = [SELECT COUNT(Id) FROM Account];
+		Integer numberOfAccounts = (Integer)theAccounts[0].get('expr0');
+	return numberOfAccounts;
+*/
 	}
 
 	/**
@@ -227,9 +234,9 @@ public with sharing class SOQL {
 		AggregateResult totalRevenue = [
 			SELECT SUM(Amount) totalAmount 
 			FROM Opportunity 
-			WHERE (StageName =:stage OR Amount >= 10000)];
+			WHERE (StageName =:stage OR Amount > 10000)];
 		Decimal result = (Decimal)totalRevenue.get('totalAmount');
-		return (result);
+		return result;
 	}
 
 	/**
@@ -392,26 +399,6 @@ public with sharing class SOQL {
 	 * TR - This was tricky. Keen to know what a better way to write this is...
 	 */
 	public static List<Account> findAccountsByLeadEmailDomains(Set<Id> leadIds) {
-		
-        // Query the Leads
-		// Create a set of email domains from the Leads
-		// Loop through each Lead
-		// Get the email from the Lead
-		// Check if the email is not null
-		// Add the email domain to the set
-		// Query the Accounts
-			//TR - Extract domain from account Website to compare with Set.
-			//TR - After the websiteDomain is extracted, check if the domain is in the set. 
-
-			//TR (26/3/26)- Removing query per feedback; to consolidate with first for loop; building domain set.
-/*
-		List <Lead> leads = new List<Lead>([
-		SELECT Id, Email
-		FROM Lead
-		WHERE Id IN :leadIds
-		AND Email != null
-		]);
-*/
 
 		Set<String> setEmailDomains = new Set<String>();
 		for (Lead lead : [
@@ -422,9 +409,12 @@ public with sharing class SOQL {
 		]) {
 		setEmailDomains.add('www.' + lead.Email.substringAfter('@'));
 		}
-		
+
 		List <Account> accounts = new List<Account>();
-        for (Account acc : [SELECT Id, Website FROM Account WHERE Website LIKE :setEmailDomains]) {
+        for (Account acc : [SELECT Id, Website FROM Account WHERE Website IN :setEmailDomains]) {
+			if (acc == null) {
+				continue;
+			}
 			String websiteDomain = acc.Website;
 			if (websiteDomain.startsWithIgnoreCase('www.')) {
 				websiteDomain = websiteDomain.substringAfter('.');
@@ -448,19 +438,9 @@ public with sharing class SOQL {
 	 *  TR - Used sObject.clone to create a new object in memory. I don't fully understand the difference between this clone and list.clone/deepclone yet, but it looks like
 	 * - using the list clone methods does not give the expected behaviour; the cloned objects create a like for like OLI list. Deep clone will create new list/new (and cloned) objects from original.
 	 * - TR - sObject clone will create a new copy of a single record.
-	 * - TR: POST SUBMISSION / BEFORE FEEDBACK - I slept on this question after submission as I knew that looping within a loop is not necessarily efficient. I realized on review today that I could use the enhanced loop for this scenario.
 	 */
 	public static void cloneLineItems(Id origOppId, List<Id> cloneOppIds) {
-		
 
-		// Query the original Opportunity Line Items
-		// Create a list to hold the new line items
-		// Loop through each cloned Opportunity Id 
-		 // Generate a random number between 1 and 3 for quantity
-			// Loop through each original line item
-		// Clone the original line item and add the random number to the quantity
-		  // Insert the new line items
-		
 		List<OpportunityLineItem> originalOppLineItems = [
         SELECT Id, OpportunityId, PricebookEntryId, UnitPrice, Quantity
         FROM OpportunityLineItem
@@ -468,16 +448,18 @@ public with sharing class SOQL {
         ]; 
 
 		List<OpportunityLineItem> newOppLineItems = new List<OpportunityLineItem>();
-		for (Integer i = 0; i < originalOppLineItems.size(); i++) {
-			Integer randomnum = (Integer) (Math.floor(Math.random()) * 3) + 1;
-			OpportunityLineItem OLIcopy = originalOppLineItems.get(i).clone(false, false, false, false);
-			OLIcopy.OpportunityId = cloneOppIds.get(i);
+		for (Id cloneOppId : cloneOppIds) {
+			for (OpportunityLineItem originalOLI : originalOppLineItems) {
+			Integer randomnum = (Integer) (Math.random() * 3) + 1;
+			OpportunityLineItem OLIcopy = originalOLI.clone(false, false, false, false);
+			OLIcopy.OpportunityId = cloneOppId;
 			OLIcopy.Quantity = randomnum;
 			newOppLineItems.add(OLIcopy);
 		}
-		if (!newOppLineItems.isEmpty()) {
-			insert newOppLineItems;
 		}
+		if (newOppLineItems != null) {
+        insert newOppLineItems;
+    }
 	}
 
 	/**
